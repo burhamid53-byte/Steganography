@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steganography Project</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Steganography Project</h1>
+        <p>Advanced Steganography Tool with Multiple Encoding Methods</p>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="encode">Encode Message</button>
+            <button class="tab-btn" data-tab="decode">Decode Message</button>
+            <button class="tab-btn" data-tab="batch">Batch Process</button>
+            <button class="tab-btn" data-tab="analyze">Image Analyzer</button>
+        </div>
+
+        <!-- Encode Tab -->
+        <div id="encode-tab" class="tab-content active">
+            <div class="grid-layout">
+                <div class="card">
+                    <h2>1. Select Cover Image</h2>
+                    <div class="upload-zone" id="encode-upload">
+                        <div class="upload-icon">📷</div>
+                        <p>Click or drag image here</p>
+                        <p style="font-size: 12px; color: #999;">Supports: PNG, JPG, BMP</p>
+                        <input type="file" id="encode-file" accept="image/*">
+                    </div>
+                    <img id="encode-preview" class="image-preview">
+                    
+                    <div class="stats-grid" id="encode-stats" style="display:none;">
+                        <div class="stat-box">
+                            <div class="stat-value" id="img-width">0</div>
+                            <div class="stat-label">Width</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="img-height">0</div>
+                            <div class="stat-label">Height</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="max-capacity">0</div>
+                            <div class="stat-label">Max Chars</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>2. Message & Settings</h2>
+                    <textarea class="text-input" id="secret-msg" placeholder="Enter your secret message here..."></textarea>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value" id="char-count">0</div>
+                            <div class="stat-label">Characters</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="usage-percent">0%</div>
+                            <div class="stat-label">Capacity Used</div>
+                        </div>
+                    </div>
+
+                    <div class="options-panel">
+                        <div class="option-group">
+                            <label>Encoding Method:</label>
+                            <select id="encode-method">
+                                <option value="lsb">LSB (Least Significant Bit)</option>
+                                <option value="lsb2">LSB-2 (2 Bits per Channel)</option>
+                                <option value="random">Random Pixel Distribution</option>
+                            </select>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="use-password">
+                            <label for="use-password">Password Protect Message</label>
+                        </div>
+                        
+                        <input type="password" class="password-input" id="encode-password" 
+                               placeholder="Enter password" style="display:none;">
+
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="add-noise">
+                            <label for="add-noise">Add Noise Layer (Better Security)</label>
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="encodeMessage()">Encode Message</button>
+                </div>
+            </div>
+
+            <div class="result-box" id="encode-result">
+                <h3>✓ Message Successfully Encoded!</h3>
+                <p>Your message has been hidden in the image. Download the stego-image below:</p>
+                <canvas id="output-canvas" style="display:none;"></canvas>
+                <img id="encoded-img" class="image-preview show" style="margin-top:15px;">
+                <br><br>
+                <button class="btn" onclick="downloadImage()">Download Stego-Image</button>
+            </div>
+        </div>
+
+        <!-- Decode Tab -->
+        <div id="decode-tab" class="tab-content">
+            <div class="card">
+                <h2>Upload Stego-Image</h2>
+                <div class="upload-zone" id="decode-upload">
+                    <div class="upload-icon">🔓</div>
+                    <p>Upload image with hidden message</p>
+                    <input type="file" id="decode-file" accept="image/*">
+                </div>
+                <img id="decode-preview" class="image-preview">
+
+                <div class="options-panel" style="margin-top:20px;">
+                    <div class="option-group">
+                        <label>Decoding Method:</label>
+                        <select id="decode-method">
+                            <option value="auto">Auto-Detect</option>
+                            <option value="lsb">LSB</option>
+                            <option value="lsb2">LSB-2</option>
+                            <option value="random">Random Distribution</option>
+                        </select>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="has-password">
+                        <label for="has-password">Message is Password Protected</label>
+                    </div>
+                    
+                    <input type="password" class="password-input" id="decode-password" 
+                           placeholder="Enter password" style="display:none;">
+                </div>
+
+                <button class="btn" onclick="decodeMessage()">Decode Message</button>
+                
+                <div class="progress-bar" id="decode-progress">
+                    <div class="progress-fill" id="decode-progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="result-box" id="decode-result">
+                <h3>Hidden Message Found!</h3>
+                <div class="decoded-text" id="decoded-msg"></div>
+                <br>
+                <button class="btn btn-secondary" onclick="copyMessage()">Copy Message</button>
+            </div>
+        </div>
+
+        <!-- Batch Process Tab -->
+        <div id="batch-tab" class="tab-content">
+            <div class="card">
+                <h2>Batch Processing</h2>
+                <p>Process multiple images at once. Useful for encoding the same message across multiple images.</p>
+                
+                <div class="upload-zone" id="batch-upload">
+                    <div class="upload-icon">📁</div>
+                    <p>Select Multiple Images</p>
+                    <input type="file" id="batch-files" accept="image/*" multiple>
+                </div>
+
+                <div id="batch-list" style="margin-top:20px;"></div>
+
+                <textarea class="text-input" id="batch-msg" 
+                          placeholder="Enter message to encode in all selected images..."></textarea>
+
+                <div class="options-panel">
+                    <div class="option-group">
+                        <label>Processing Method:</label>
+                        <select id="batch-method">
+                            <option value="duplicate">Same message in all images</option>
+                            <option value="split">Split message across images</option>
+                        </select>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="batch-password">
+                        <label for="batch-password">Password Protect All</label>
+                    </div>
+                    
+                    <input type="password" class="password-input" id="batch-password-input" 
+                           placeholder="Enter password" style="display:none;">
+                </div>
+
+                <button class="btn" onclick="processBatch()">Process All Images</button>
+                
+                <div class="progress-bar" id="batch-progress">
+                    <div class="progress-fill" id="batch-progress-fill">Processing...</div>
+                </div>
+
+                <div class="result-box" id="batch-result">
+                    <h3>✓ Batch Processing Complete!</h3>
+                    <p>All images have been processed successfully.</p>
+                    <div id="batch-download-links"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analyze Tab -->
+        <div id="analyze-tab" class="tab-content">
+            <div class="card">
+                <h2>Steganography Detection</h2>
+                <p>Analyze an image to detect potential hidden content using statistical analysis.</p>
+                
+                <div class="upload-zone" id="analyze-upload">
+                    <div class="upload-icon">🔍</div>
+                    <p>Upload image to analyze</p>
+                    <input type="file" id="analyze-file" accept="image/*">
+                </div>
+                
+                <img id="analyze-preview" class="image-preview">
+                
+                <button class="btn" onclick="analyzeImage()">Analyze Image</button>
+                
+                <div class="spinner" id="analyze-spinner"></div>
+                
+                <div id="analysis-results" style="margin-top:20px;display:none;">
+                    <h3>Analysis Results:</h3>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value" id="chi-square">0</div>
+                            <div class="stat-label">Chi-Square Test</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="entropy">0</div>
+                            <div class="stat-label">Entropy Score</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="lsb-bias">0</div>
+                            <div class="stat-label">LSB Bias</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="stego-probability">0%</div>
+                            <div class="stat-label">Stego Probability</div>
+                        </div>
+                    </div>
+                    
+                    <canvas id="histogram-canvas" width="400" height="200" 
+                            style="margin-top:20px;border:1px solid #ddd;"></canvas>
+                    
+                    <div class="alert info" id="analysis-alert">
+                        <strong>Analysis Complete:</strong> <span id="analysis-message">Image analyzed successfully!</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Visual Attack Tools</h2>
+                <p>Apply visual filters to reveal hidden patterns:</p>
+                
+                <div style="margin: 15px 0;">
+                    <button class="btn btn-secondary" onclick="applyFilter('lsb')">Extract LSB Plane</button>
+                    <button class="btn btn-secondary" onclick="applyFilter('enhance')">Enhance Edges</button>
+                    <button class="btn btn-secondary" onclick="applyFilter('difference')">Show Differences</button>
+                </div>
+                
+                <canvas id="filter-canvas" style="max-width:100%;margin-top:20px;display:none;border:1px solid #ddd;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
